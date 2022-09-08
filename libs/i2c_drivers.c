@@ -1,7 +1,7 @@
 
 #include <stdint.h>
 #include "i2c_drivers.h"
-#include "pin_manager.h"
+#include "pic16f18877.h"
 
 
 /***************************************************************************
@@ -107,7 +107,7 @@ void I2C_NotAck_Read(uint8_t *rx_data){
 
     I2C_RECEIVE;
     while(I2C_DATA_BIT == LOW);
-   // Flag_Polling();
+    //Flag_Polling();
     *rx_data = I2C_DATA_BUFFER;
     I2C_Idle_Check();
     I2C_ACK_SEQ;
@@ -135,7 +135,7 @@ void I2C_Ack_Read(uint8_t *rx_data, uint8_t count){
     I2C_Idle_Check();
     I2C_ACK_SEQ;
     I2C_ACK = ACKNOWLEDGE;
-   // Flag_Polling();
+    //Flag_Polling();
 
 
 }

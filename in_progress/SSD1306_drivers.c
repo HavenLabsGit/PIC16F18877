@@ -5,9 +5,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "i2c_drivers.h"
+#include "../libs/i2c_drivers.h"
 #include "SSD1306_drivers.h"
-#include "pic16f18877.h"
 
 
 
@@ -90,6 +89,7 @@ void SSD1306_Init(void){
     SSD1306_Command(0x80);        // dafualt value ~380kHz
     SSD1306_Command(CHARGEPUMP); // 0x8D A[2]=0b disbale charge pump A[2]=1b enable charge pump opcode 010X00b
     SSD1306_Command(0x14);        //enable charge pump
+    SSD1306_Command(INVERTDISPLAY);
     SSD1306_Command(DISPLAYON);   //Display ON normal mode
 
 
@@ -145,13 +145,14 @@ uint8_t GotoXY(uint8_t row, uint8_t column){
 // Upper nibble = 0x19
 // Binary looks like 1 1001 0110
 // ====================================================================== //
-
+//
+  uint8_t byte;
   uint8_t lower_nibble =(column & 0x0F);  // Takes column AND with 0x0F to only get lower nibble
   uint8_t upper_nibble = (column & 0xF0); // Takes colum AND with 0xF0 to only get upper nibble
   uint8_t upper_final = ((upper_nibble >>= 4) + 0x10); // Bitshift right 4 to only have upper nibble then add 0x10
-  // TODO this does not work at this time. If Column is 10; 0x0A then results is 0x10 currently. I think?
-  x_pos = upper_nibble + lower_nibble;
-  y_pos = row;
+  byte = upper_nibble + lower_nibble;
+  x_pos = &byte;
+  y_pos = &row;
 
   SSD1306_Command(0xB0 + row); // Start PAGE Address
   SSD1306_Command(0x00 + lower_nibble); //Start lower nibble address
@@ -160,18 +161,16 @@ uint8_t GotoXY(uint8_t row, uint8_t column){
 
 }
 
-void PutC(uint8_t c){
+void Draw_pixel(void){
 
   SSD1306_Command(COLUMNADDR); // Set start and stop column address two bytes
-  SSD1306_Command(x_pos);      // Send the start which is x_pos from GOtoXY
-  SSD1306_Command(x_pos + 5); // Send the stop which is x_pos + 5. One character takes 5 columns
+  SSD1306_Command(*x_pos);      // Send the start which is x_pos from GOtoXY
+  SSD1306_Command(*x_pos + 5); // Send the stop which is x_pos + 5. One character takes 5 columns
 
   SSD1306_Command(PAGEADDR);
-  SSD1306_Command(y_pos);
-  SSD1306_Command(y_pos);
+  SSD1306_Command(*y_pos);
+  SSD1306_Command(*y_pos);
 
-
-  for(uint8_t i = 0; i < 5; i++ ){
-        uint8_t letter = Font[((c - 32) * 5 + i)];
-        SSD1306_Data(letter); // Write character to screen
+  SSD1306_Data(0x74); // Write character to screen
   }
+

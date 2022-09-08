@@ -63,7 +63,7 @@ void SSD1306_Data(uint8_t data);
 void SSD1306_Init(void);
 void ClearDisplay(void);
 uint8_t GotoXY(uint8_t row, uint8_t column);
-void PutC(uint8_t c);
+void Draw_pixel(void);
 
 
 
@@ -115,7 +115,7 @@ void PutC(uint8_t c);
 #define VERTICAL_AND_LEFT_HORIZONTAL_SCROLL  0x2A
 
 /* Global Variables */
-uint8_t _vccstate, x_pos = 1, y_pos = 1;
+uint8_t _vccstate, *x_pos, *y_pos;
 
 
 bool wrap = true;

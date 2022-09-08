@@ -4,6 +4,7 @@
 #define I2C_DRIVERS_H_
 
 #include <stdint.h>
+#include "../in_progress/pin_manager.h"
 
 
 //MACROS
@@ -31,8 +32,8 @@
 #define SDA_PPS_INPUT do{SSP1DATPPS = 0x14;} while(0) //RC4->MSSP1:SDA1; page 236
 #define SCK_PPS_INPUT do{SSP1CLKPPS = 0x13;} while(0) //RC3->MSSP1:SCL1;
 // PPS Outputs
-#define SDA_PPS_OUTPUT do{RC3PPS = 0x14;} while(0) //RC3->MSSP1:SCL1; page 239
-#define SCK_PPS_OUTPUT do{RC4PPS = 0x15;} while(0) //RC4->MSSP1:SDA1;
+#define SDA_PPS_OUTPUT do{RC4PPS = 0x15;} while(0) //RC4->MSSP1:SDA1;
+#define SCK_PPS_OUTPUT do{RC3PPS = 0x14;} while(0) //RC3->MSSP1:SCL1; page 239
 // Conditions
 #define I2C_START_SEND do{SSP1CON2bits.SEN = 1;} while(0) // Sends start bit
 #define I2C_START_BIT SSP1CON2bits.SEN // Access start bit
