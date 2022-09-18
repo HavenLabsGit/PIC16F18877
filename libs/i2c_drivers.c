@@ -60,8 +60,6 @@ void I2C_Stop(void){
 
 
 }
-
-
 /* Name: I2C_Restart
  * Parameter: void
  * Return: nothing

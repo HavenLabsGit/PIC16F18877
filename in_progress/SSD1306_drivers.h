@@ -48,6 +48,7 @@
 #ifndef SSD1306_DRIVERS_H
 #define SSD1306_DRIVERS_H
 
+
 /***************************************************************************
  ================================ Includes =================================
  ***************************************************************************/
@@ -58,27 +59,33 @@
  =========================== Function Prototypes ===========================
 ***************************************************************************/
 
-void SSD1306_Command(uint8_t data);
-void SSD1306_Data(uint8_t data);
+void SSD1306_Command(const uint8_t *array, uint8_t size_array);
+void SSD1306_Data();
 void SSD1306_Init(void);
 void ClearDisplay(void);
 uint8_t GotoXY(uint8_t row, uint8_t column);
 void Draw_pixel(void);
-
-
+void init_test(void);
+void draw_test(void);
+void horizontal_fill_screen(uint8_t value);
+void Horz_Goto_XY(uint8_t start_column, uint8_t end_column, uint8_t start_row, uint8_t end_row );
 
 /***************************************************************************
  ================================= Macros ==================================
  ***************************************************************************/
-#define I2C_ADDRESS   0x78 // 0b111100 is 0x3C address followed by two 0 for SAO 
+#define I2C_ADDRESS   0x78 // 0b111100 is 0x3C address followed by two 0 for SAO
                            // and write
+#define COMMAND 0x00
+#define DATA 0x40
 
 /* Parameters of screen */
 #define SSD1306_129_32
 #define LCDWIDTH             128
 #define LCDHEIGHT            32
 
-/* Commands */
+/***************************************************************************
+ =========================== Fundamental Commads ===========================
+***************************************************************************/
 #define SETCONTRAST          0x81
 #define DISPLAYALLON_RESUME  0xA4
 #define DISPLAYALLON         0xA5
@@ -86,26 +93,10 @@ void Draw_pixel(void);
 #define INVERTDISPLAY        0xA7
 #define DISPLAYOFF           0xAE
 #define DISPLAYON            0xAF
-#define SETDISPLAYOFFSET     0xD3
-#define SETCOMPINS           0xDA
-#define SETVCOMDETECT        0xDB
-#define SETDISPLAYCLOCKDIV   0xD5
-#define SETPRECHARGE         0xD9
-#define SETMULTIPLEX         0xA8
-#define SETLOWCOLUMN         0x00
-#define SETHIGHCOLUMN        0x10
-#define SETSTARTLINE         0x40
-#define MEMORYMODE           0x20
-#define COLUMNADDR           0x21
-#define PAGEADDR             0x22
-#define COMSCANCOM0          0xC0
-#define COMSCANCOM_N         0xC8 // Scan from COM[N-1] to COM0 where N is multuplixed ratio
-#define SEGREMAP             0xA1
-#define CHARGEPUMP           0x8D
-#define EXTERNALVCC          0x01
-#define SWITCHCAPVCC         0x02
 
-/* Scrolling #defines */
+/***************************************************************************
+ =========================== Scrolling Commands ============================
+***************************************************************************/
 #define ACTIVATE_SCROLL                      0x2F
 #define DEACTIVATE_SCROLL                    0x2E
 #define SET_VERTICAL_SCROLL_AREA             0xA3
@@ -114,8 +105,90 @@ void Draw_pixel(void);
 #define VERTICAL_AND_RIGHT_HORIZONTAL_SCROLL 0x29
 #define VERTICAL_AND_LEFT_HORIZONTAL_SCROLL  0x2A
 
+/***************************************************************************
+ ========================= Address Setting Commads =========================
+***************************************************************************/
+#define MEMORYMODE           0x20
+#define COLUMNADDR           0x21
+#define PAGEADDR             0x22
+#define SETLOWCOLUMN         0x00
+#define SETHIGHCOLUMN        0x10
+
+/***************************************************************************
+ ========================== Harware Configuration ==========================
+***************************************************************************/
+#define SETCOMPINS           0xDA
+#define SETDISPLAYOFFSET     0xD3      // 0xD3 Sets display RAM start line 0 - 63 with 0b00000
+                                       // Example to move COM 16 to COM 0, 0b10000 || 0x10
+
+#define SETSTARTLINE         0x40     //Sets display RAM start line register from 0-63
+                                   // opcode is 0x40 to 0x7F which looks like 0b01XXXXX test
+#define COMSCANCOM0          0xC0   //Scan from COM0 to COM[N-1] where N is multuplixed ratio
+#define COMSCANCOM_N         0xC8 // Scan from COM[N-1] to COM0 where N is multuplixed ratio
+#define SEGREMAP             0xA1 // column address 127 is mapped to SEG0
+#define SEGREMAP_RESET       0xA0 // column address 0 is mapped to SEG0
+#define SETMULTIPLEX         0xA8 // set MUX ratio N+1, N=A[5:0] 16MUX to 64MUX
+
+/***************************************************************************
+ =========================== Timing & Driving ============================
+***************************************************************************/
+#define SETVCOMDESELECT      0xDB    // VCOMH deselect level 0x00~0.65xVCC, 0x10~0.77xVCC, 0x30~0.83xVCC
+#define SETDISPLAYCLOCKDIV   0xD5     // 0xD5 Display Clock Divide Ratio A[3:0] divide ration is 1 to 16.
+                                     // Oscillator frequency A[7:4] defualt value is 1000b.
+#define SETPRECHARGE         0xD9  // Phase 1 A[3:0] up to 15DCLK / Phase 2 A[7:4] up to 15DCLK
+#define CHARGEPUMP           0x8D  // 0x8D A[2]=0b disbale charge pump A[2]=1b enable charge pump opcode 010X00b
+#define CHARGEPUMP_EN        0x14 // Enable charge pump
+#define EXTERNALVCC          0x01
+#define SWITCHCAPVCC         0x02
+
 /* Global Variables */
 uint8_t _vccstate, *x_pos, *y_pos;
+
+const uint8_t horz_init[]={
+
+   COMMAND,
+      DISPLAYOFF,
+      SETDISPLAYCLOCKDIV,
+      0x90,             // 400kHz FOSC, divide by 1
+      SETMULTIPLEX,
+      0x1F,     // Sets MUX to 31 for 128x32 OLED. This means PAGE0 to PAGE3
+                           // PAGE0 (COM0-COM7)
+                           // PAGE1 (COM8-COM15)
+                           // PAGE2 (COM16-COM23)
+                           // PAGE3 (COM24-COM31)
+      SETDISPLAYOFFSET,
+      0x00, //offset is COM0
+      SETSTARTLINE,
+      CHARGEPUMP,
+      CHARGEPUMP_EN,
+      SEGREMAP_RESET,
+      SETCOMPINS,
+      COMSCANCOM0,
+      SETCONTRAST,
+      0x7F, // Reset contrast
+      SETPRECHARGE,
+      0xF1, // TODO need more info
+      DISPLAYALLON_RESUME,
+      NORMALDISPLAY,
+      MEMORYMODE,
+      0x00, // Horizontal mode
+      DISPLAYON,
+
+};
+
+/* Array that has instructions to set area to entire screen, only vertical or horizontal addressing */
+
+const uint8_t entire_screen[]={
+
+COLUMNADDR,
+0x00,
+0x7F,
+PAGEADDR,
+0x00,
+0x03,
+
+
+};
 
 
 bool wrap = true;
